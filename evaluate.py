@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, confusion_matrix
 
 
 def compute_error_auc(op_str, gt, pred, prob):
@@ -50,6 +50,16 @@ def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size):
         nms_prob.append(nms_prob_o[ii][valid_preds, 0][..., np.newaxis])
     return nms_pos, nms_prob, gt_pos
 
+def conf_matrix(actual_class, predicted_class):    
+    flat_actual = np.concatenate(np.array([np.tile(actual_class[i], len(predicted_class[i])) for i in range(len(actual_class))])).ravel()
+    flat_predict = np.concatenate(predicted_class)
+    print confusion_matrix(flat_actual, flat_predict)
+    print 'Accuracy', accuracy_score(flat_actual, flat_predict)
+    for i in precision_recall_fscore_support(flat_actual, flat_predict):
+        print 'Precision', i[0]
+        print 'Recall', i[1]
+
+
 
 def prec_recall_1d(nms_pos_o, nms_prob_o, gt_pos_o, durations, detection_overlap, win_size, remove_eof=True):
     """
@@ -66,8 +76,8 @@ def prec_recall_1d(nms_pos_o, nms_prob_o, gt_pos_o, durations, detection_overlap
     audio file.
 
     returns
-    precision: fraction of retrieved instances that are relevant.
-    recall: fraction of relevant instances that are retrieved.
+    precison
+    recall
     """
 
     if remove_eof:

@@ -31,7 +31,7 @@ if __name__ == '__main__':
     run a specific model or baseline comment it out.
     """
 
-    test_set = '01052020'
+    test_set = 'testconfusion'
     data_set = 'data/train_test_split/test1.npz'
     raw_audio_dir = 'data/wav/'
     base_line_dir = 'data/baselines/'
@@ -71,17 +71,23 @@ if __name__ == '__main__':
     model.train(train_files, train_pos, train_durations, train_classes)
 
     # test + plot (per class)
-    for i in range(1, np.max(test_classes)+1):
+    """for i in range(1, np.max(test_classes)+1):
         inds = np.where(test_classes == i)
         if inds[0].size != 0:
             nms_pos, nms_prob, class_  = model.test_batch(test_files[inds], test_pos[inds], test_durations[inds], True, 'spectrograms/')
             precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos[inds], test_durations[inds], model.params.detection_overlap, model.params.window_size)
-            res.plot_prec_recall('cnn', recall, precision, nms_prob, "group_"+str(i))
+            res.plot_prec_recall('cnn', recall, precision, nms_prob, "group_"+str(i))"""
 
     # test all + plot
-    """nms_pos, nms_prob, class_  = model.test_batch(test_files, test_pos, test_durations, False, '')
-    precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, model.params.detection_overlap, model.params.window_size)
-    res.plot_prec_recall('cnn', recall, precision, nms_prob, ""all_groups")"""
+    nms_pos, nms_prob, class_  = model.test_batch(test_files, test_pos, test_durations, False, 'spectrograms/')
+    np.save('pos.npy', nms_pos)
+    np.save('prob.npy', nms_prob)
+    np.save('classes.npy', class_)
+    ##### CONFUSION MATRIX #####
+    #print  evl.conf_matrix(test_classes, class_)
+    ###########################
+    """precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, model.params.detection_overlap, model.params.window_size)
+    res.plot_prec_recall('cnn', recall, precision, nms_prob, "all_groups")"""
 
     # save CNN model to file
     pickle.dump(model, open(model_dir + 'test_set_' + test_set + '.mod', 'wb'))

@@ -48,12 +48,17 @@ def plot_prec_recall(alg_name, recall, precision, nms_prob=None, class_=None):
     plt.legend(loc='lower left')
     plt.grid(1)
     plt.show()
-    plt.savefig("plots/"+class_+".png")
+    if class_ == None:
+        plt.savefig("plots/allclasses.png")
+    else:
+        plt.savefig("plots/"+class_+".png")
 
 
 def plot_spec(op_file_name, ip_file, gt_pos, nms_pos, nms_prob, y_prediction, params, save_ims):
 
     # create spec
+    if '//' in ip_file:
+        ip_file = '/' + ip_file.split('//')[1]
     sampling_rate, audio_samples = wavfile.read(ip_file)
     file_duration = audio_samples.shape[0] / float(sampling_rate)
     spectrogram = sp.gen_spectrogram(audio_samples, sampling_rate, params.fft_win_length, params.fft_overlap,
@@ -91,6 +96,9 @@ def plot_spec(op_file_name, ip_file, gt_pos, nms_pos, nms_prob, y_prediction, pa
     plt.grid()
 
     if save_ims:
+        if '//' in op_file_name:
+            tmp = op_file_name.split('//')
+            op_file_name = tmp[0] + '/' + tmp[1].split('/')[-1] 
         fig.savefig(op_file_name + '.jpg')
 
     plt.close(1)
