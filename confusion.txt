@@ -1,0 +1,93 @@
+--------------
+Confusion matrix
+--------------
+[[  32    0   18    0    0    0    0]
+ [   3 1453   67    9   76    4    3]
+ [   1   17 2185    5   43    1   37]
+ [   0   69   66  409  166    0    1]
+ [  26   36  106   29  496   21    5]
+ [   0   10   47    3   33  126    0]
+ [   0    6   20    6   53    0  279]]
+--------------
+Class 1
+--------------
+True Positive 32
+False Positive 30
+False Negative 18
+True Negative 5887
+Accuracy 0.991955756661639
+Precision 0.5161290322580645
+Recall 0.64
+
+--------------
+Class 2
+--------------
+True Positive 1453
+False Positive 138
+False Negative 162
+True Negative 4214
+Accuracy 0.9497234791352438
+Precision 0.9132620993086109
+Recall 0.8996904024767802
+
+--------------
+Class 3
+--------------
+True Positive 2185
+False Positive 324
+False Negative 104
+True Negative 3354
+Accuracy 0.9282721635662812
+Precision 0.8708648864089279
+Recall 0.9545653123634775
+
+--------------
+Class 4
+--------------
+True Positive 409
+False Positive 52
+False Negative 302
+True Negative 5204
+Accuracy 0.9406737053795877
+Precision 0.8872017353579176
+Recall 0.5752461322081576
+
+--------------
+Class 5
+--------------
+True Positive 496
+False Positive 371
+False Negative 223
+True Negative 4877
+Accuracy 0.9004524886877828
+Precision 0.5720876585928489
+Recall 0.6898470097357441
+
+--------------
+Class 6
+--------------
+True Positive 126
+False Positive 26
+False Negative 93
+True Negative 5722
+Accuracy 0.98005698005698
+Precision 0.8289473684210527
+Recall 0.5753424657534246
+
+--------------
+Class 7
+--------------
+True Positive 279
+False Positive 46
+False Negative 85
+True Negative 5557
+Accuracy 0.9780459192223898
+Precision 0.8584615384615385
+Recall 0.7664835164835165
+
+--------------
+Average
+--------------
+Average Accuracy 0.9527400703871293
+Average Precision 0.7781363312584231
+Average Recall 0.7287392627173

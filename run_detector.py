@@ -42,7 +42,7 @@ def run_detector(det, audio, file_dur, samp_rate, detection_thresh):
 
     det_time = []
     det_prob = []
-    total_matches = []
+    det_class = []
 
     # files can be long so we split each up into separate (overlapping) chunks
     st_positions = np.arange(0, file_dur, det.chunk_size-det.params.window_size)
@@ -55,7 +55,7 @@ def run_detector(det, audio, file_dur, samp_rate, detection_thresh):
         audio_chunk = audio[st_pos:en_pos]
 
         # make predictions
-        pos, prob, y_prediction, matches  = det.test_single(audio_chunk, samp_rate)
+        pos, prob, y_prediction, classes  = det.test_single(audio_chunk, samp_rate)
         prob = prob[:,0]
 
         # remove predictions near the end (if not last chunk) and ones that are
@@ -69,18 +69,17 @@ def run_detector(det, audio, file_dur, samp_rate, detection_thresh):
         if pos.shape[0] > 0:
             det_time.append(pos[inds] + st_position)
             det_prob.append(prob[inds])
-            total_matches.append(np.array(matches[y_prediction >= detection_thresh]))
+            det_class.append(classes[inds])
 
     if len(det_time) > 0:
         det_time = np.hstack(det_time)
         det_prob = np.hstack(det_prob)
-        total_matches = np.hstack(total_matches)
 
         # undo the effects of times expansion
         if do_time_expansion:
             det_time /= 10.0
 
-    return det_time, det_prob, total_matches
+    return det_time, det_prob, det_class
 
 
 if __name__ == "__main__":
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     # load gpu lasagne model
     model_dir = 'data/models/'
     group_names = np.load('data/train_test_split/group_names.npy')
-    model_file = model_dir + 'test_set_last_test_franco.mod'
+    model_file = model_dir + 'test_set_testconfusion.mod'
     det = pickle.load(open(model_file))
     det.chunk_size = 4.0
 
@@ -132,15 +131,13 @@ if __name__ == "__main__":
                                           detection_thresh)
         toc = time.time()
 
-        print det_time
         print '  detection time', round(toc-tic, 3), '(secs)'
         num_calls = len(det_time)
         if num_calls > 0:
-            a =  np.asarray(matches)
-            occ = np.bincount(a)
-            for ind, elem in np.ndenumerate(occ) :
-                if elem != 0:
-                    print '  Matching group '+group_names[ind[0]]+' ('+str((elem*100.0)/np.sum(occ))+'%)'
+            cls_calls = np.concatenate(np.array(matches)).ravel()
+            print [group_names[i] for i in cls_calls]
+                
+                
         print '  ' + str(num_calls) + ' calls found'
 
         # save results

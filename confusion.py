@@ -1,35 +1,7 @@
 import numpy as np
-from sklearn.metrics import roc_curve, auc, confusion_matrix
-
-
-def compute_error_auc(op_str, gt, pred, prob):
-
-    # classification error
-    pred_int = (pred > prob).astype(np.int)
-    class_acc = (pred_int == gt).mean() * 100.0
-
-    # ROC - area under curve
-    fpr, tpr, thresholds = roc_curve(gt, pred)
-    roc_auc = auc(fpr, tpr)
-
-    print op_str, ', class acc = %.3f, ROC AUC = %.3f' % (class_acc, roc_auc)
-    #return class_acc, roc_auc
-
-def calc_average_precision(recall, precision):
-
-    precision[np.isnan(precision)] = 0
-    recall[np.isnan(recall)] = 0
-
-    # pascal'12 way
-    mprec = np.hstack((0, precision, 0))
-    mrec = np.hstack((0, recall, 1))
-    for ii in range(mprec.shape[0]-2, -1,-1):
-        mprec[ii] = np.maximum(mprec[ii], mprec[ii+1])
-    inds = np.where(np.not_equal(mrec[1:], mrec[:-1]))[0]+1
-    ave_prec = ((mrec[inds] - mrec[inds-1])*mprec[inds]).sum()
-
-    return ave_prec
-
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_recall_fscore_support
+from data_set_params import DataSetParams
+import create_results as res
 
 def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size):
     # this filters out predictions and gt that are close to the end
@@ -51,25 +23,8 @@ def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size):
     return nms_pos, nms_prob, gt_pos
 
 
-def prec_recall_1d(nms_pos_o, nms_prob_o, gt_pos_o, durations, detection_overlap, win_size, remove_eof=True):
-    """
-    nms_pos, nms_prob, and gt_pos are lists of numpy arrays specifying detection
-    position, detection probability and GT position.
-    Each list entry is a different file.
-    Each entry in nms_pos is an array of length num_entries. For nms_prob and
-    gt_pos its an array of size (num_entries, 1).
 
-    durations is a array of the length of the number of files with each entry
-    containing that file length in seconds.
-    detection_overlap determines if a prediction is counted as correct or not.
-    win_size is used to ignore predictions and ground truth at the end of an
-    audio file.
-
-    returns
-    precison
-    recall
-    """
-
+def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, detection_overlap, win_size, remove_eof=True):
     if remove_eof:
         # filter out the detections in both ground truth and predictions that are too
         # close to the end of the file - dont count them during eval
@@ -80,31 +35,84 @@ def prec_recall_1d(nms_pos_o, nms_prob_o, gt_pos_o, durations, detection_overlap
         gt_pos = gt_pos_o
 
     # loop through each file
+
     true_pos = []  # correctly predicts the ground truth
     false_pos = []  # says there is a detection but isn't
+    conf_matrix = np.zeros((7,7), dtype=int)
+    total_gt = 0
+    total_tp = 0
+
     for ii in range(len(nms_pos)):
         num_preds = nms_pos[ii].shape[0]
-
+        cur_class = classes[ii]
+        #print 'pos',nms_pos[0].shape
+        #print 'gt pos',gt_pos[ii].shape
+        total_gt = total_gt + gt_pos[ii].shape[0]
+        #print 'class',class_[0].shape
         if num_preds > 0:  # check to make sure it contains something
             num_gt = gt_pos[ii].shape[0]
 
             # for each set of predictions label them as true positive or false positive (i.e. 1-tp)
             tp = np.zeros(num_preds)
+            #print gt_pos[ii].ravel()
+            #print nms_pos[ii].ravel()
             distance_to_gt = np.abs(gt_pos[ii].ravel()-nms_pos[ii].ravel()[:, np.newaxis])
             within_overlap = (distance_to_gt <= detection_overlap)
-                
-
+            #print within_overlap.shape
+            
             # remove duplicate detections - assign to valid detection with highest prob
             for jj in range(num_gt):
-                inds = np.where(within_overlap[:, jj])[0]  # get the indices of all valid predictions
+                inds = np.where(within_overlap[:, jj])[0] # get the indices of all valid predictions
                 if inds.shape[0] > 0:
                     max_prob = np.argmax(nms_prob[ii][inds])
                     selected_pred = inds[max_prob]
                     within_overlap[selected_pred, :] = False
-                    tp[selected_pred] = 1  # set as true positives
+                    if class_[ii][selected_pred] == cur_class:
+                        tp[selected_pred] = 1  # set as true positives
+                        conf_matrix[cur_class-1][cur_class-1] = conf_matrix[cur_class-1][cur_class-1]+1
+                    else:
+                        conf_matrix[cur_class-1][class_[ii][selected_pred]-1]= conf_matrix[cur_class-1][class_[ii][selected_pred]-1]+1
+          
             true_pos.append(tp)
             false_pos.append(1 - tp)
+            #print 'tp',np.array(true_pos)[0].shape
+            #print 'fp',np.array(false_pos)[0].shape
 
+    
+    print '--------------'
+    print 'Confusion matrix'
+    print '--------------'
+    print conf_matrix
+    avg_prec = 0.0
+    avg_recall = 0.0
+
+    TP = np.diag(conf_matrix)
+    FP = conf_matrix.sum(axis=0) - TP
+    FN = conf_matrix.sum(axis=1) - TP
+    TN = conf_matrix.sum() - (TP + FN + FP)
+    AC = (TP+TN)/(TP+FP+FN+TN).astype(float)
+    PRE = TP/(TP+FP).astype(float)
+    REC = TP/(TP+FN).astype(float)
+    
+    for i in range(conf_matrix.shape[0]):
+        print '--------------'
+        print 'Class', i+1
+        print '--------------'
+        print 'True Positive', TP[i]
+        print 'False Positive', FP[i]
+        print 'False Negative', FN[i]
+        print 'True Negative',TN[i]
+        print 'Accuracy', AC[i]
+        print 'Precision', PRE[i]
+        print 'Recall', REC[i]
+        print
+    
+    print '--------------'
+    print 'Average'
+    print '--------------'    
+    print 'Average Accuracy', np.mean(AC)
+    print 'Average Precision', np.mean(PRE)
+    print 'Average Recall', np.mean(REC)
     # calc precision and recall - sort confidence in descending order
     # PASCAL style
     conf = np.concatenate(nms_prob)[:, 0]
@@ -131,3 +139,20 @@ def prec_recall_1d(nms_pos_o, nms_prob_o, gt_pos_o, durations, detection_overlap
         precision = (true_pos_cum / (false_pos_cum + true_pos_cum))
 
     return precision, recall
+
+
+data_set = 'data/train_test_split/moved_npz.npz'
+loaded_data_tr = np.load(data_set, allow_pickle=True)
+test_pos = loaded_data_tr['test_pos']
+test_files = loaded_data_tr['test_files']
+test_durations = loaded_data_tr['test_durations']
+test_classes = loaded_data_tr['test_class']
+params = DataSetParams()
+
+nms_pos = np.load('pos26.npy')
+nms_prob = np.load('prob26.npy')
+class_ = np.load('classes26.npy')
+
+p, r = conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)
+#res.plot_prec_recall('cnn', r, p, nms_prob, "all_groups")
+

@@ -67,20 +67,33 @@ class NeuralNet:
     
         # predictions for max classes
         y_predictions = self.test_fn(features)
-        actual_calls = y_predictions[:,1:]
+    
 
-        # Getting all calls found 
-        y_prediction = np.array([np.max(x) for x in actual_calls])[:, np.newaxis]
-        group_matches = np.array([np.argmax(x)+1 for x in actual_calls])[:, np.newaxis]
+        # trying to get rid of rows with 0 highest
+        #call_predictions  = y_predictions[np.argmax(y_predictions, axis=1) != 0][:]
+        #print 'no 0 highest', call_predictions.shape
+        call_predictions = y_predictions
+        call_predictions = call_predictions[:,1:]
+        #print 'no 0', call_predictions.shape
+        
+        high_preds = np.array([np.max(x) for x in call_predictions])[:, np.newaxis]
+        classes = np.array([np.argmax(x)+1 for x in call_predictions])[:, np.newaxis]
+        #print 'high_preds', high_preds.shape
+        #print 'classes', classes.shape
+
     
         # smooth the output prediction
         if self.params.smooth_op_prediction:
-            y_prediction = gaussian_filter1d(y_prediction, self.params.smooth_op_prediction_sigma, axis=0)
+            high_preds = gaussian_filter1d(high_preds, self.params.smooth_op_prediction_sigma, axis=0)
         
-        # perform non max suppression
-        pos, prob = nms.nms_1d(y_prediction[:,0].astype(np.float), self.params.nms_win_size, file_duration)
+        #print 'after filter', high_preds.shape
 
-        return pos, prob, y_prediction, group_matches
+        # perform non max suppression
+        pos, prob, classes = nms.nms_1d(high_preds[:,0].astype(np.float), classes,self.params.nms_win_size, file_duration)
+        #print 'pos', pos.shape
+        #print 'prob', prob.shape
+        #print 'classes nms', classes.shape
+        return pos, prob, high_preds, classes
 
     def create_or_load_features(self, file_name=None, audio_samples=None, sampling_rate=None):
         """

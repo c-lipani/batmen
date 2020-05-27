@@ -31,8 +31,8 @@ if __name__ == '__main__':
     run a specific model or baseline comment it out.
     """
 
-    test_set = 'testconfusion'
-    data_set = 'data/train_test_split/test1.npz'
+    test_set = 'may26'
+    data_set = 'data/train_test_split/moved_npz.npz'
     raw_audio_dir = 'data/wav/'
     base_line_dir = 'data/baselines/'
     result_dir = 'results/'
@@ -80,12 +80,10 @@ if __name__ == '__main__':
 
     # test all + plot
     nms_pos, nms_prob, class_  = model.test_batch(test_files, test_pos, test_durations, False, 'spectrograms/')
-    np.save('pos.npy', nms_pos)
-    np.save('prob.npy', nms_prob)
-    np.save('classes.npy', class_)
-    ##### CONFUSION MATRIX #####
-    #print  evl.conf_matrix(test_classes, class_)
-    ###########################
+    np.save('pos26.npy', nms_pos)
+    np.save('prob26.npy', nms_prob)
+    np.save('classes26.npy', class_)
+
     """precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, model.params.detection_overlap, model.params.window_size)
     res.plot_prec_recall('cnn', recall, precision, nms_prob, "all_groups")"""
 

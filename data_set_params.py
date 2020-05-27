@@ -20,7 +20,7 @@ class DataSetParams:
         self.load_features_from_file = False
 
         # hard negative mining
-        self.num_hard_negative_mining = 2  # if 0 there won't be any
+        self.num_hard_negative_mining = 0  # if 0 there won't be any
 
         # non max suppression - smoothing and window
         self.smooth_op_prediction = True  # smooth the op parameters before nms

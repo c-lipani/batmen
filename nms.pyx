@@ -5,7 +5,7 @@ cimport cython
 cdef inline int int_min(int a, int b): return a if a < b else b
 
 @cython.boundscheck(False)
-def nms_1d(np.ndarray src, int win_size, float file_duration):
+def nms_1d(np.ndarray src, np.ndarray class_, int win_size, float file_duration):
     """1D Non maximum suppression
        src: vector of length N
     """
@@ -40,14 +40,16 @@ def nms_1d(np.ndarray src, int win_size, float file_duration):
 
     pos = pos[:pos_cnt]
     val = src[pos]
+    classes = class_[pos]
 
     # remove peaks near the end
     inds = (pos + win_size) < src.shape[0]
     pos = pos[inds]
     val = val[inds]
+    classes = classes[inds]
 
     # set output to between 0 and 1, then put it in the correct time range
     pos = pos.astype(np.float) / src.shape[0]
     pos = pos*file_duration
 
-    return pos, val[..., np.newaxis]
+    return pos, val[..., np.newaxis], classes

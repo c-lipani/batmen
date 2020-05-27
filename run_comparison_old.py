@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import evaluate as evl
@@ -29,8 +31,8 @@ if __name__ == '__main__':
     run a specific model or baseline comment it out.
     """
 
-    test_set = 'try'  # can be one of: bulgaria, uk, norfolk
-    data_set = 'data/train_test_split/test_set_' + test_set + '.npz'
+    test_set = 'bulg'  # can be one of: bulgaria, uk, norfolk
+    data_set = 'data/train_test_split/test_set_bulgaria.npz'
     raw_audio_dir = 'data/wav/'
     base_line_dir = 'data/baselines/'
     result_dir = 'results/'

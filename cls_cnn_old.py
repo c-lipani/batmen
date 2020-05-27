@@ -92,7 +92,10 @@ class NeuralNet:
             if self.params.load_features_from_file:
                 features = np.load(self.params.feature_dir + file_name + '.npy')
             else:
-                sampling_rate, audio_samples = wavfile.read(self.params.audio_dir + file_name + '.wav')
+                path = file_name
+                if not '/storage' in file_name:
+                    path = self.params.audio_dir + file_name
+                sampling_rate, audio_samples = wavfile.read(path + '.wav')
                 features = compute_features(audio_samples, sampling_rate, self.params)
 
         return features
