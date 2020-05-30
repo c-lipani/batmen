@@ -62,13 +62,18 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
                     selected_pred = inds[max_prob]
                     within_overlap[selected_pred, :] = False
                     tp[selected_pred] = 1  # set as true positives
+                    """
                     if class_[ii][selected_pred] == cur_class:
                         conf_matrix[cur_class-1][cur_class-1] = conf_matrix[cur_class-1][cur_class-1]+1
                     else:
                         conf_matrix[cur_class-1][class_[ii][selected_pred]-1]= conf_matrix[cur_class-1][class_[ii][selected_pred]-1]+1
           
+                    """
             true_pos.append(tp)
             false_pos.append(1 - tp)
+            
+            for i in range(len(class_[ii])):
+                conf_matrix[cur_class-1][class_[ii][i]-1] = conf_matrix[cur_class-1][class_[ii][i]-1]+1
 
     
     print '--------------'
@@ -147,10 +152,10 @@ nms_pos = np.load('pos26.npy')
 nms_prob = np.load('prob26.npy')
 class_ = np.load('classes26.npy')
 
-#p, r = conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)
-#res.plot_prec_recall('cnn', r, p, nms_prob, "all_groups")
+p, r = conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)
+res.plot_prec_recall('cnn', r, p, nms_prob, "all_groups")
 
 
-precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, params.detection_overlap, params.window_size)
-res.plot_prec_recall('cnn', recall, precision, nms_prob, "all_groups")
+#precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, params.detection_overlap, params.window_size)
+#res.plot_prec_recall('cnn', recall, precision, nms_prob, "all_groups")
 

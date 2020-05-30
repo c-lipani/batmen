@@ -1,0 +1,96 @@
+--------------
+Confusion matrix
+--------------
+[[   34     0   199     0     0     0     0]
+ [    3  2916  2309    38   273     9    52]
+ [    1   134 10395    27   234     2   156]
+ [    0   206  1226   633   352     2    13]
+ [   30   117  1527    43  1518    48    69]
+ [    0    47   727    10    78   147     0]
+ [    0    26   259    18   154     0  1471]]
+--------------
+Class 1
+--------------
+True Positive 34
+False Positive 34
+False Negative 199
+True Negative 25236
+Accuracy 0.9908638199427519
+Precision 0.5
+Recall 0.1459227467811159
+
+--------------
+Class 2
+--------------
+True Positive 2916
+False Positive 530
+False Negative 2684
+True Negative 19373
+Accuracy 0.8739756107124652
+Precision 0.8461984910040626
+Recall 0.5207142857142857
+
+--------------
+Class 3
+--------------
+True Positive 10395
+False Positive 6247
+False Negative 554
+True Negative 8307
+Accuracy 0.7333254911186919
+Precision 0.6246244441773825
+Recall 0.9494017718513106
+
+--------------
+Class 4
+--------------
+True Positive 633
+False Positive 136
+False Negative 1799
+True Negative 22935
+Accuracy 0.9241265733443125
+Precision 0.823146944083225
+Recall 0.2602796052631579
+
+--------------
+Class 5
+--------------
+True Positive 1518
+False Positive 1091
+False Negative 1834
+True Negative 21060
+Accuracy 0.8853076108693095
+Precision 0.5818321195860483
+Recall 0.4528639618138425
+
+--------------
+Class 6
+--------------
+True Positive 147
+False Positive 61
+False Negative 862
+True Negative 24433
+Accuracy 0.963808179429871
+Precision 0.7067307692307693
+Recall 0.14568880079286423
+
+--------------
+Class 7
+--------------
+True Positive 1471
+False Positive 290
+False Negative 457
+True Negative 23285
+Accuracy 0.970709328314316
+Precision 0.835320840431573
+Recall 0.7629668049792531
+
+--------------
+Average
+--------------
+Average Accuracy 0.9060166591045312
+Average Precision 0.7025505155018658
+Average Recall 0.4625482824565471
+5967.0
+average precision (area) = 0.828 
+recall at 95 % precision =  0.428
