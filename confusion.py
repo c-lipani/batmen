@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_recall_fscore_support
 from data_set_params import DataSetParams
 import create_results as res
+import evaluate as evl
 
 def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size):
     # this filters out predictions and gt that are close to the end
@@ -39,26 +40,19 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
     true_pos = []  # correctly predicts the ground truth
     false_pos = []  # says there is a detection but isn't
     conf_matrix = np.zeros((7,7), dtype=int)
-    total_gt = 0
-    total_tp = 0
+
 
     for ii in range(len(nms_pos)):
         num_preds = nms_pos[ii].shape[0]
         cur_class = classes[ii]
-        #print 'pos',nms_pos[0].shape
-        #print 'gt pos',gt_pos[ii].shape
-        total_gt = total_gt + gt_pos[ii].shape[0]
-        #print 'class',class_[0].shape
+
         if num_preds > 0:  # check to make sure it contains something
             num_gt = gt_pos[ii].shape[0]
 
             # for each set of predictions label them as true positive or false positive (i.e. 1-tp)
             tp = np.zeros(num_preds)
-            #print gt_pos[ii].ravel()
-            #print nms_pos[ii].ravel()
             distance_to_gt = np.abs(gt_pos[ii].ravel()-nms_pos[ii].ravel()[:, np.newaxis])
             within_overlap = (distance_to_gt <= detection_overlap)
-            #print within_overlap.shape
             
             # remove duplicate detections - assign to valid detection with highest prob
             for jj in range(num_gt):
@@ -67,16 +61,14 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
                     max_prob = np.argmax(nms_prob[ii][inds])
                     selected_pred = inds[max_prob]
                     within_overlap[selected_pred, :] = False
+                    tp[selected_pred] = 1  # set as true positives
                     if class_[ii][selected_pred] == cur_class:
-                        tp[selected_pred] = 1  # set as true positives
                         conf_matrix[cur_class-1][cur_class-1] = conf_matrix[cur_class-1][cur_class-1]+1
                     else:
                         conf_matrix[cur_class-1][class_[ii][selected_pred]-1]= conf_matrix[cur_class-1][class_[ii][selected_pred]-1]+1
           
             true_pos.append(tp)
             false_pos.append(1 - tp)
-            #print 'tp',np.array(true_pos)[0].shape
-            #print 'fp',np.array(false_pos)[0].shape
 
     
     print '--------------'
@@ -119,7 +111,9 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
     num_gt = np.concatenate(gt_pos).shape[0]
     inds = np.argsort(conf)[::-1]
     true_pos_cat = np.concatenate(true_pos)[inds].astype(float)
-    false_pos_cat = np.concatenate(false_pos)[inds].astype(float)  # i.e. 1-true_pos_cat
+    print true_pos_cat.sum()
+    false_pos_cat = np.concatenate(false_pos)[inds].astype(float)
+
 
     if (conf == conf[0]).sum() == conf.shape[0]:
         # all the probability values are the same therefore we will not sweep
@@ -153,6 +147,10 @@ nms_pos = np.load('pos26.npy')
 nms_prob = np.load('prob26.npy')
 class_ = np.load('classes26.npy')
 
-p, r = conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)
+#p, r = conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)
 #res.plot_prec_recall('cnn', r, p, nms_prob, "all_groups")
+
+
+precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, params.detection_overlap, params.window_size)
+res.plot_prec_recall('cnn', recall, precision, nms_prob, "all_groups")
 
