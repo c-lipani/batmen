@@ -3,6 +3,7 @@ from skimage.util.shape import view_as_windows
 from scipy.ndimage import zoom
 from scipy.ndimage.filters import gaussian_filter1d
 import spectrogram as sp
+import matplotlib.pyplot as plt
 from scipy.io import wavfile
 import pyximport; pyximport.install()
 import nms as nms
@@ -68,31 +69,19 @@ class NeuralNet:
         # predictions for max classes
         y_predictions = self.test_fn(features)
     
-
         # trying to get rid of rows with 0 highest
-        #call_predictions  = y_predictions[np.argmax(y_predictions, axis=1) != 0][:]
-        #print 'no 0 highest', call_predictions.shape
         call_predictions = y_predictions
         call_predictions = call_predictions[:,1:]
-        #print 'no 0', call_predictions.shape
         
         high_preds = np.array([np.max(x) for x in call_predictions])[:, np.newaxis]
         classes = np.array([np.argmax(x)+1 for x in call_predictions])[:, np.newaxis]
-        #print 'high_preds', high_preds.shape
-        #print 'classes', classes.shape
-
     
         # smooth the output prediction
         if self.params.smooth_op_prediction:
             high_preds = gaussian_filter1d(high_preds, self.params.smooth_op_prediction_sigma, axis=0)
-        
-        #print 'after filter', high_preds.shape
-
         # perform non max suppression
         pos, prob, classes = nms.nms_1d(high_preds[:,0].astype(np.float), classes,self.params.nms_win_size, file_duration)
-        #print 'pos', pos.shape
-        #print 'prob', prob.shape
-        #print 'classes nms', classes.shape
+
         return pos, prob, high_preds, classes
 
     def create_or_load_features(self, file_name=None, audio_samples=None, sampling_rate=None):

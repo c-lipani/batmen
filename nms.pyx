@@ -44,6 +44,7 @@ def nms_1d(np.ndarray src, np.ndarray class_, int win_size, float file_duration)
 
     # remove peaks near the end
     inds = (pos + win_size) < src.shape[0]
+
     pos = pos[inds]
     val = val[inds]
     classes = classes[inds]

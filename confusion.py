@@ -4,12 +4,13 @@ from data_set_params import DataSetParams
 import create_results as res
 import evaluate as evl
 
-def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size):
+def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o,class_o, durations, win_size):
     # this filters out predictions and gt that are close to the end
     # this is a bit messy because of the shapes of gt_pos_o
     nms_pos = []
     nms_prob = []
     gt_pos = []
+    class_ = []
     for ii in range(len(nms_pos_o)):
         valid_time = durations[ii] - win_size
         gt_cur = gt_pos_o[ii]
@@ -20,27 +21,28 @@ def remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size):
 
         valid_preds = nms_pos_o[ii] < valid_time
         nms_pos.append(nms_pos_o[ii][valid_preds])
+        class_.append(class_o[ii][valid_preds])
         nms_prob.append(nms_prob_o[ii][valid_preds, 0][..., np.newaxis])
-    return nms_pos, nms_prob, gt_pos
+    return nms_pos, nms_prob, gt_pos, class_
 
 
 
-def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, detection_overlap, win_size, remove_eof=True):
+def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_o, classes, durations, detection_overlap, win_size, remove_eof=True):
     if remove_eof:
         # filter out the detections in both ground truth and predictions that are too
         # close to the end of the file - dont count them during eval
-        nms_pos, nms_prob, gt_pos = remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, durations, win_size)
+        nms_pos, nms_prob, gt_pos, class_ = remove_end_preds(nms_pos_o, nms_prob_o, gt_pos_o, class_o,durations, win_size)
     else:
         nms_pos = nms_pos_o
         nms_prob = nms_prob_o
         gt_pos = gt_pos_o
+        class_ = class_o
 
     # loop through each file
 
     true_pos = []  # correctly predicts the ground truth
     false_pos = []  # says there is a detection but isn't
     conf_matrix = np.zeros((7,7), dtype=int)
-
 
     for ii in range(len(nms_pos)):
         num_preds = nms_pos[ii].shape[0]
@@ -62,26 +64,17 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
                     selected_pred = inds[max_prob]
                     within_overlap[selected_pred, :] = False
                     tp[selected_pred] = 1  # set as true positives
-                    """
-                    if class_[ii][selected_pred] == cur_class:
-                        conf_matrix[cur_class-1][cur_class-1] = conf_matrix[cur_class-1][cur_class-1]+1
-                    else:
-                        conf_matrix[cur_class-1][class_[ii][selected_pred]-1]= conf_matrix[cur_class-1][class_[ii][selected_pred]-1]+1
-          
-                    """
             true_pos.append(tp)
             false_pos.append(1 - tp)
             
             for i in range(len(class_[ii])):
                 conf_matrix[cur_class-1][class_[ii][i]-1] = conf_matrix[cur_class-1][class_[ii][i]-1]+1
 
-    
+    print conf_matrix.sum()
     print '--------------'
     print 'Confusion matrix'
     print '--------------'
     print conf_matrix
-    avg_prec = 0.0
-    avg_recall = 0.0
 
     TP = np.diag(conf_matrix)
     FP = conf_matrix.sum(axis=0) - TP
@@ -91,6 +84,15 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
     PRE = TP/(TP+FP).astype(float)
     REC = TP/(TP+FN).astype(float)
     
+    print "sum", conf_matrix.sum()
+    print TP
+    print FP
+    print FN
+    print TN
+    print AC
+    print PRE
+    print REC
+
     for i in range(conf_matrix.shape[0]):
         print '--------------'
         print 'Class', i+1
@@ -104,43 +106,16 @@ def conf_matrix(nms_pos_o, nms_prob_o, gt_pos_o,class_, classes, durations, dete
         print 'Recall', REC[i]
         print
     
+    print conf_matrix.sum()
     print '--------------'
     print 'Average'
     print '--------------'    
     print 'Average Accuracy', np.mean(AC)
     print 'Average Precision', np.mean(PRE)
     print 'Average Recall', np.mean(REC)
-    # calc precision and recall - sort confidence in descending order
-    # PASCAL style
-    conf = np.concatenate(nms_prob)[:, 0]
-    num_gt = np.concatenate(gt_pos).shape[0]
-    inds = np.argsort(conf)[::-1]
-    true_pos_cat = np.concatenate(true_pos)[inds].astype(float)
-    print true_pos_cat.sum()
-    false_pos_cat = np.concatenate(false_pos)[inds].astype(float)
 
 
-    if (conf == conf[0]).sum() == conf.shape[0]:
-        # all the probability values are the same therefore we will not sweep
-        # the curve and instead will return a single value
-        true_pos_sum = true_pos_cat.sum()
-        false_pos_sum = false_pos_cat.sum()
-
-        recall = np.asarray([true_pos_sum / float(num_gt)])
-        precision = np.asarray([(true_pos_sum / (false_pos_sum + true_pos_sum))])
-
-    elif inds.shape[0] > 0:
-        # otherwise produce a list of values
-        true_pos_cum = np.cumsum(true_pos_cat)
-        false_pos_cum = np.cumsum(false_pos_cat)
-
-        recall = true_pos_cum / float(num_gt)
-        precision = (true_pos_cum / (false_pos_cum + true_pos_cum))
-
-    return precision, recall
-
-
-data_set = 'data/train_test_split/moved_npz.npz'
+data_set = 'data/train_test_split/batmen.npz'
 loaded_data_tr = np.load(data_set, allow_pickle=True)
 test_pos = loaded_data_tr['test_pos']
 test_files = loaded_data_tr['test_files']
@@ -148,14 +123,13 @@ test_durations = loaded_data_tr['test_durations']
 test_classes = loaded_data_tr['test_class']
 params = DataSetParams()
 
-nms_pos = np.load('pos26.npy')
-nms_prob = np.load('prob26.npy')
-class_ = np.load('classes26.npy')
+"""
+nms_pos = np.load('pos3.npy')
+nms_prob = np.load('prob3.npy')
+class_ = np.load('classes3.npy')
+"""
+nms_pos = np.load('pos3.npy')
+nms_prob = np.load('prob3.npy')
+class_ = np.load('classes3.npy')
 
-p, r = conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)
-res.plot_prec_recall('cnn', r, p, nms_prob, "all_groups")
-
-
-#precision, recall = evl.prec_recall_1d(nms_pos, nms_prob, test_pos, test_durations, params.detection_overlap, params.window_size)
-#res.plot_prec_recall('cnn', recall, precision, nms_prob, "all_groups")
-
+conf_matrix(nms_pos, nms_prob, test_pos ,class_, test_classes, test_durations, params.detection_overlap, params.window_size)

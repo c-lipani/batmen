@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # load gpu lasagne model
     model_dir = 'data/models/'
     group_names = np.load('data/train_test_split/group_names.npy')
-    model_file = model_dir + 'test_set_testconfusion.mod'
+    model_file = model_dir + 'test_set_batmen.mod'
     det = pickle.load(open(model_file))
     det.chunk_size = 4.0
 
@@ -136,6 +136,7 @@ if __name__ == "__main__":
         if num_calls > 0:
             cls_calls = np.concatenate(np.array(matches)).ravel()
             print [group_names[i] for i in cls_calls]
+            print det_prob
                 
                 
         print '  ' + str(num_calls) + ' calls found'
